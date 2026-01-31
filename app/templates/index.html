@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Classificação Inteligente de Emails</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .body-gradient {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      }
+    </style>
+  </head>
+  <body class="font-sans body-gradient min-h-screen p-4 sm:p-8 text-slate-800">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-12 text-white">
+        <h1 class="text-4xl font-bold mb-2 text-shadow">
+          Sistema de Classificação Inteligente de Emails
+        </h1>
+        <p class="text-lg opacity-95">
+          Automatize a triagem de emails com Inteligência Artificial Gemini
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Card de Input -->
+        <div
+          class="bg-white rounded-2xl p-8 shadow-2xl transform transition-all hover:-translate-y-1"
+        >
+          <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+            Entrada de Email
+          </h2>
+
+          <div
+            class="hidden p-4 mb-4 rounded-lg bg-red-100 text-red-800 border border-red-200"
+            id="errorAlert"
+          ></div>
+
+          <div class="flex gap-2 mb-4 border-b-2 border-slate-200">
+            <button
+              class="tab-btn py-3 px-6 bg-none border-b-2 font-medium transition-all -mb-0.5 text-blue-600 border-blue-600 flex-1"
+              data-tab="text"
+            >
+              ✍️ Texto
+            </button>
+            <button
+              class="tab-btn py-3 px-6 bg-none border-b-2 border-transparent cursor-pointer font-medium text-slate-500 transition-all -mb-0.5 hover:text-blue-800 flex-1"
+              data-tab="file"
+            >
+              📎 Arquivo
+            </button>
+          </div>
+
+          <form id="emailForm">
+            <!-- Tab de Texto -->
+            <div class="tab-content" id="textTab">
+              <div class="mb-6">
+                <label class="block font-medium mb-2 text-slate-800"
+                  >Digite ou cole o conteúdo do email:</label
+                >
+                <textarea
+                  id="emailText"
+                  class="w-full min-h-[200px] p-4 border border-slate-300 rounded-lg text-sm resize-y transition-colors focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  placeholder="Cole aqui o texto do email que deseja classificar..."
+                ></textarea>
+              </div>
+            </div>
+
+            <!-- Tab de Arquivo -->
+            <div class="tab-content hidden" id="fileTab">
+              <div class="mb-6">
+                <label class="block font-medium mb-2 text-slate-800"
+                  >Upload de arquivo (.eml, .txt ou .pdf):</label
+                >
+                <div
+                  class="border-2 border-dashed border-slate-300 rounded-lg p-8 text-center cursor-pointer transition-all bg-slate-50 hover:border-blue-600 hover:bg-blue-50"
+                  id="fileUpload"
+                >
+                  <input
+                    type="file"
+                    id="fileInput"
+                    class="hidden"
+                    accept=".eml,.txt,.pdf"
+                  />
+                  <p class="text-slate-500 mb-2">
+                    <strong>Arraste e solte</strong> ou
+                    <strong>clique para selecionar</strong>
+                  </p>
+                  <p class="text-sm text-slate-500">
+                    Formatos: .eml, .txt, .pdf (máx. 10MB)
+                  </p>
+                </div>
+                <div
+                  class="hidden bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4 items-center gap-3"
+                  id="fileInfo"
+                >
+                  <div class="flex-1">
+                    <div
+                      class="font-semibold text-slate-800"
+                      id="fileName"
+                    ></div>
+                    <div class="text-sm text-slate-500" id="fileSize"></div>
+                  </div>
+                  <button
+                    type="button"
+                    id="clearFileBtn"
+                    class="py-2 px-4 rounded-lg bg-slate-50 text-slate-800 border border-slate-300 hover:bg-slate-200"
+                  >
+                    ✕
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              class="py-3.5 px-7 rounded-lg font-semibold text-base cursor-pointer transition-all inline-flex items-center gap-2 justify-center bg-blue-600 text-white w-full hover:bg-blue-800 disabled:opacity-60 disabled:cursor-not-allowed transform hover:-translate-y-0.5 shadow-md"
+              id="submitBtn"
+            >
+              Analisar Email
+            </button>
+          </form>
+        </div>
+
+        <!-- Card de Resultados -->
+        <div class="bg-white rounded-2xl p-8 shadow-2xl">
+          <h2 class="text-2xl font-semibold mb-6 flex items-center gap-3">
+            Resultado da Análise
+          </h2>
+
+          <!-- Loader -->
+          <div class="hidden text-center p-8" id="loader">
+            <div
+              class="border-4 border-slate-200 border-t-blue-600 rounded-full w-10 h-10 animate-spin mx-auto mb-4"
+            ></div>
+            <p class="text-slate-500">Analisando email com IA Gemini...</p>
+          </div>
+
+          <!-- Estado Inicial -->
+          <div id="emptyState">
+            <div class="text-center py-12 px-4 text-slate-500">
+              <p class="text-lg mb-2">Aguardando análise</p>
+              <p class="text-sm">
+                Insira um email para começar a classificação automática
+              </p>
+            </div>
+          </div>
+
+          <!-- Resultados -->
+          <div class="hidden" id="results">
+            <div class="bg-slate-50 rounded-xl p-6 mb-4">
+              <div
+                class="inline-flex items-center gap-2 py-2 px-4 rounded-full font-semibold text-sm mb-4"
+                id="classification"
+              >
+                <span id="categoryText"></span>
+              </div>
+
+              <div
+                class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 pt-4 border-t border-slate-200"
+              >
+                <div class="text-sm">
+                  <div class="text-slate-500 mb-1">Confiança</div>
+                  <div
+                    class="font-semibold text-slate-800"
+                    id="confidence"
+                  ></div>
+                </div>
+                <div class="text-sm">
+                  <div class="text-slate-500 mb-1">Prioridade</div>
+                  <div class="font-semibold text-slate-800" id="priority"></div>
+                </div>
+                <div class="text-sm">
+                  <div class="text-slate-500 mb-1">Tempo de Resposta</div>
+                  <div
+                    class="font-semibold text-slate-800"
+                    id="responseTime"
+                  ></div>
+                </div>
+              </div>
+
+              <div class="h-2 bg-slate-200 rounded-full overflow-hidden mt-2">
+                <div
+                  class="h-full bg-gradient-to-r from-green-400 to-blue-500 transition-all duration-500 ease-in-out"
+                  id="confidenceFill"
+                ></div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg p-5 mt-4">
+              <div
+                class="font-semibold mb-3 text-slate-800 flex items-center gap-2"
+              >
+                Resposta Sugerida
+                <button
+                  id="copyResponseBtn"
+                  class="py-2 px-4 bg-blue-600 text-white rounded-md cursor-pointer text-sm transition-all hover:bg-blue-800 ml-auto"
+                >
+                  📋 Copiar
+                </button>
+              </div>
+              <div
+                class="text-slate-600 leading-relaxed whitespace-pre-wrap"
+                id="responseText"
+              ></div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-lg p-5 mt-4">
+              <div
+                class="font-semibold mb-3 text-slate-800 flex items-center gap-2"
+              >
+                Justificativa da Classificação
+              </div>
+              <div
+                class="text-slate-600 leading-relaxed whitespace-pre-wrap"
+                id="reasoning"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='assets/js/script.js') }}"></script>
+  </body>
+</html>
